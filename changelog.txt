@@ -1,3 +1,9 @@
+= 1.0 =
+* Fork and total rebrand of the plugin
+* Correction of some warnings and errors due to incompatibility with newer versions of PHP
+
+==================================
+
 = 1.7.5 =
 * Resolved issue with series framing.
 * Exposed more options to the widget interface.
