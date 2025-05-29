@@ -5,7 +5,10 @@ namespace elicawebservices\wordpress\also_in_this_collection;
 const COLLECTION_SLUG = 'also-in-this-collection';
 const COLLECTION_TAXONOMY = 'collection';
 
-function config( $key = null ) {
+/**
+ * Get configuration options, optionally by key.
+ */
+function config($key = null) {
     $defaults = [
         'title-wrap' => 'h2',
         'title-template' => 'also-in',
@@ -16,13 +19,16 @@ function config( $key = null ) {
         'always-link-collection' => false,
     ];
 
-    $config = array_merge( $defaults, get_option( COLLECTION_SLUG, [] ) );
+    $config = array_merge($defaults, get_option(COLLECTION_SLUG, []));
 
     return $key !== null ? $config[$key] : $config;
 }
 
-function displayCollection( $args = [] ) {
-    $fargs = wp_parse_args( $args, [
+/**
+ * Display the collection listing based on arguments.
+ */
+function displayCollection($args = []) {
+    $fargs = wp_parse_args($args, [
         'collection-slug' => null,
         'collectionSlug' => null, // legacy param
         'use-frame' => true,
@@ -33,9 +39,10 @@ function displayCollection( $args = [] ) {
         'title-template' => null,
         'hide-collection-listing' => 'default',
         'always-link-collection' => 'default',
-    ] );
+    ]);
 
-    $fargs = filter_var_array( [
+    // Normalize and validate arguments
+    $fargs = filter_var_array([
         'collectionslug' => $fargs['collection-slug'] ?: $fargs['collectionSlug'],
         'useframe' => $fargs['use-frame'],
         'framewidth' => $fargs['frame-width'],
@@ -46,38 +53,38 @@ function displayCollection( $args = [] ) {
         'alwayslinkcollection' => $fargs['always-link-collection'],
     ], [
         'collectionslug' => [
-    'filter' => FILTER_DEFAULT
-],
+            'filter' => FILTER_DEFAULT
+        ],
         'useframe' => [
             'filter' => FILTER_VALIDATE_BOOLEAN,
         ],
         'framewidth' => [
             'filter' => FILTER_VALIDATE_INT,
-            'options' => [ 'min_range' => 1, 'default' => config( 'window-collection-listing' ) ],
+            'options' => ['min_range' => 1, 'default' => config('window-collection-listing')],
         ],
         'sortorder' => [
             'filter' => FILTER_VALIDATE_REGEXP,
-            'options' => [ 'regexp' => '/asc|desc/i', 'default' => config( 'archive-sort-order' ) ],
+            'options' => ['regexp' => '/asc|desc/i', 'default' => config('archive-sort-order')],
         ],
         'titlewrap' => [
             'filter' => FILTER_VALIDATE_REGEXP,
-            'options' => [ 'regexp' => '/h1|h2|h3|span/i', 'default' => config( 'title-wrap' ) ],
+            'options' => ['regexp' => '/h1|h2|h3|span/i', 'default' => config('title-wrap')],
         ],
         'titletemplate' => [
             'filter' => FILTER_VALIDATE_REGEXP,
-            'options' => [ 'regexp' => '/also-in|ordinal|none/i', 'default' => config( 'title-template' ) ],
+            'options' => ['regexp' => '/also-in|ordinal|none/i', 'default' => config('title-template')],
         ],
         'hidecollectionlisting' => [
             'filter' => FILTER_VALIDATE_BOOLEAN,
             'flags' => FILTER_NULL_ON_FAILURE,
-            'options' => [ 'default' => config( 'hide-collection-listing' ) ],
+            'options' => ['default' => config('hide-collection-listing')],
         ],
         'alwayslinkcollection' => [
             'filter' => FILTER_VALIDATE_BOOLEAN,
             'flags' => FILTER_NULL_ON_FAILURE,
-            'options' => [ 'default' => config( 'always-link-collection' ) ],
+            'options' => ['default' => config('always-link-collection')],
         ]
-    ] );
+    ]);
 
     $collectionslug = $fargs['collectionslug'];
     $useframe = $fargs['useframe'];
@@ -91,17 +98,18 @@ function displayCollection( $args = [] ) {
     $post = get_post();
     $currentpostid = $post ? $post->ID : null;
 
-    if( $collectionslug ) {
-        $collection = get_term_by( 'slug', $collectionslug, COLLECTION_TAXONOMY );
-    }
-    else {
-        $post and $postcollection = get_the_terms( $post->ID, COLLECTION_TAXONOMY ) and $collection = reset( $postcollection );
+    // Get collection term
+    if ($collectionslug) {
+        $collection = get_term_by('slug', $collectionslug, COLLECTION_TAXONOMY);
+    } else {
+        $post && $postcollection = get_the_terms($post->ID, COLLECTION_TAXONOMY) && $collection = reset($postcollection);
     }
 
-    if( !$collection ) {
+    if (!$collection) {
         return;
     }
 
+    // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- This query is acceptable for our use case
     $query = [
         'tax_query' => [
             [
@@ -114,31 +122,42 @@ function displayCollection( $args = [] ) {
         'nopaging' => true,
     ];
 
-    $collectionposts = get_posts( $query );
-    $postsincollection = count( $collectionposts );
+    $collectionposts = get_posts($query);
+    $postsincollection = count($collectionposts);
 
-    $currentpostrank = findCurrentPostRank( $collectionposts, $currentpostid, $sortorder );
+    $currentpostrank = findCurrentPostRank($collectionposts, $currentpostid, $sortorder);
     $frame = [0, $postsincollection - 1];
 
     $framing = $post && $useframe && $framewidth;
-    if( $framing ) {
-        $frame = computeFrame( $collectionposts, $framewidth, $currentpostid );
-        $collectionposts = array_slice( $collectionposts, $frame[0], $frame[1] - $frame[0] );
+    if ($framing) {
+        $frame = computeFrame($collectionposts, $framewidth, $currentpostid);
+        $collectionposts = array_slice($collectionposts, $frame[0], $frame[1] - $frame[0]);
     }
 
     $logicalframe = [$frame[0] + 1, $frame[1] + 1];
-    if( $sortorder === 'desc' ) {
+    if ($sortorder === 'desc') {
         $logicalframe[0] = $postsincollection + 1 - $logicalframe[0];
         $logicalframe[1] = $postsincollection + 1 - $logicalframe[1];
     }
 
-    switch( $titletemplate ) {
+    // Use ordered placeholders for i18n strings
+    switch ($titletemplate) {
         case 'also-in':
-            $title = sprintf( __( 'Also in %s', 'also-in-this-collection' ), $collection->name );
+            $title = sprintf(
+                /* translators: %s: collection name */
+                __('Also in %1$s', 'also-in-this-collection'),
+                $collection->name
+            );
             break;
 
         case 'ordinal':
-            $title = sprintf( __( 'This is part %d of %d in %s', 'also-in-this-collection' ), $currentpostrank + 1, $postsincollection, $collection->name );
+            $title = sprintf(
+                /* translators: 1: current post rank, 2: total posts, 3: collection name */
+                __('This is part %1$d of %2$d in %3$s', 'also-in-this-collection'),
+                $currentpostrank + 1,
+                $postsincollection,
+                $collection->name
+            );
             break;
 
         case 'none':
@@ -148,6 +167,7 @@ function displayCollection( $args = [] ) {
 
     $description = $collection->description;
 
+    // Render template
     $themeTemplate = get_template_part(
         COLLECTION_SLUG . '/collectionlisting',
         $collectionslug,
@@ -165,102 +185,111 @@ function displayCollection( $args = [] ) {
             'currentpostrank' => $currentpostrank,
         ]
     );
-    if( false === $themeTemplate ) {
-        include apply_filters( 'alsointhiscollection_template', 'views/collectionlisting.php' );
-    } 
+    if (false === $themeTemplate) {
+        include apply_filters('alsointhiscollection_template', 'views/collectionlisting.php');
+    }
 }
 
-function pre_get_posts( $query ) {
-    $sortorder = config( 'archive-sort-order' );
+/**
+ * Set the order for collection taxonomy archives.
+ */
+function pre_get_posts($query) {
+    $sortorder = config('archive-sort-order');
 
-    if( isset( $query->query[COLLECTION_TAXONOMY] ) && $sortorder )
-        $query->set( 'order', $sortorder );
+    if (isset($query->query[COLLECTION_TAXONOMY]) && $sortorder) {
+        $query->set('order', $sortorder);
+    }
 
     return $query;
 }
 
-function the_content( $content ) {
-    if( !is_singular( 'post' ) || !config( 'insert-in-content' ) ) {
+/**
+ * Insert collection listing into post content.
+ */
+function the_content($content) {
+    if (!is_singular('post') || !config('insert-in-content')) {
         return $content;
     }
-    
+
     ob_start();
     displayCollection();
-    $alsointhiscollection = ob_get_contents(); 
+    $alsointhiscollection = ob_get_contents();
     ob_end_clean();
-    
+
     $before = $after = '';
-    switch( config( 'insert-in-content' ) ) {
-        case 'prepend' :
+    switch (config('insert-in-content')) {
+        case 'prepend':
             $before = $alsointhiscollection;
             break;
 
-        case 'append' :
+        case 'append':
             $after = $alsointhiscollection;
             break;
 
-        default :
+        default:
+            // Do nothing
     }
 
     return $before . $content . $after;
 }
 
-function computeFrame( $collectionposts, $framewidth, $currentpostid ) {
+/**
+ * Compute the frame (window) of posts around the current post.
+ */
+function computeFrame($collectionposts, $framewidth, $currentpostid) {
     $pivot = 0;
 
-    if( !$currentpostid ) {
-        return [0, count( $collectionposts ) - 1];
+    if (!$currentpostid) {
+        return [0, count($collectionposts) - 1];
     }
 
-    foreach( $collectionposts as $index => $collectionpost ) {
+    foreach ($collectionposts as $index => $collectionpost) {
         $pivot = $index;
-        if( $collectionpost->ID === $currentpostid ) {
+        if ($collectionpost->ID === $currentpostid) {
             break;
         }
     }
 
-    $frame_left = max( 0, $pivot - floor( ( $framewidth - 1 ) / 2 ) );
-    $frame_right = min( count( $collectionposts ) - 1, $pivot + ceil( ( $framewidth - 1 ) / 2 ) );
+    $frame_left = max(0, $pivot - floor(($framewidth - 1) / 2));
+    $frame_right = min(count($collectionposts) - 1, $pivot + ceil(($framewidth - 1) / 2));
 
-    $ldiff = $frame_left - ( $pivot - floor( ( $framewidth - 1 ) / 2 ) );
-    $rdiff = ( $pivot + ceil( ( $framewidth - 1 ) / 2 ) ) - $frame_right;
+    $ldiff = $frame_left - ($pivot - floor(($framewidth - 1) / 2));
+    $rdiff = ($pivot + ceil(($framewidth - 1) / 2)) - $frame_right;
 
-    if( $ldiff && !$rdiff ) {
-        $frame_right = min( count( $collectionposts ) - 1, $frame_right + $ldiff );
-    }
-    elseif( $rdiff && !$ldiff ) {
-        $frame_left = max( 0, $frame_left - $rdiff );
+    // Adjust frame if needed
+    if ($ldiff && !$rdiff) {
+        $frame_right = min(count($collectionposts) - 1, $frame_right + $ldiff);
+    } elseif ($rdiff && !$ldiff) {
+        $frame_left = max(0, $frame_left - $rdiff);
     }
 
     return [$frame_left, 1 + $frame_right];
 }
 
-function findCurrentPostRank( $collectionposts, $currentpostid, $order ) {
+/**
+ * Find the rank of the current post within the collection.
+ */
+function findCurrentPostRank($collectionposts, $currentpostid, $order) {
     $currentpostrank = null;
 
-    if( !$currentpostid ) {
+    if (!$currentpostid) {
         return $currentpostrank;
     }
 
-    foreach( $collectionposts as $index => $collectionpost ) {
-        if( $collectionpost->ID === $currentpostid ) {
+    foreach ($collectionposts as $index => $collectionpost) {
+        if ($collectionpost->ID === $currentpostid) {
             $currentpostrank = $index;
             break;
         }
     }
 
-    switch( $order ) {
-        case 'desc':
-        case 'DESC':
-            return count( $collectionposts ) - 1 - $currentpostrank;
-            break;
-
-        case 'asc':
-        case 'ASC':
-        default:
-            return $currentpostrank;
-    }
+    if (strtolower($order) === 'desc') {
+    return count($collectionposts) - 1 - $currentpostrank;
+} else {
+    return $currentpostrank;
+}
 }
 
-add_action( 'pre_get_posts', __NAMESPACE__ . '\pre_get_posts' );
-add_action( 'the_content', __NAMESPACE__ . '\the_content', 1 );
+// Register hooks
+add_action('pre_get_posts', __NAMESPACE__ . '\pre_get_posts');
+add_action('the_content', __NAMESPACE__ . '\the_content', 1);
