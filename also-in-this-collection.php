@@ -52,10 +52,10 @@ function also_in_this_collection_uninstall() {
 	
 	// If you need to remove taxonomy terms or other data, do it here
 	// Example: Remove all terms from your custom taxonomy
-	// $terms = get_terms(array('taxonomy' => 'collection', 'hide_empty' => false));
-	// foreach($terms as $term) {
-	//     wp_delete_term($term->term_id, 'collection');
-	// }
+	$terms = get_terms(array('taxonomy' => 'collection', 'hide_empty' => false));
+	foreach($terms as $term) {
+	wp_delete_term($term->term_id, 'collection');
+	}
 }
 
 function also_in_this_collection_deactivate() {
