@@ -21,7 +21,7 @@ if( also_in_this_collection_meets_requirements() ) {
 	require_once 'also-in-this-collection-shortcodes.php';
 	
 	if( !wp_doing_ajax() && is_admin() ) {
-		require_once plugin_dir_path( __file__ ) . 'also-in-this-collection-admin.php';
+		require_once plugin_dir_path( __FILE__ ) . 'also-in-this-collection-admin.php';
 	}
 }
 else {
@@ -41,8 +41,26 @@ function also_in_this_collection_activate() {
     add_option( 'alsointhiscollection_activate', true );
 }
 
-function also_in_this_series_uninstall() {
-	add_option( 'alsointhiscollection_deactivate', true );
+function also_in_this_collection_uninstall() {
+	// Clean up plugin data immediately during uninstall
+	delete_option( 'also-in-this-collection' );
+	delete_option( 'alsointhiscollection_activate' );
+	delete_option( 'alsointhiscollection_deactivate' );
+	
+	// Remove any custom taxonomies and flush rewrite rules
+	flush_rewrite_rules();
+	
+	// If you need to remove taxonomy terms or other data, do it here
+	// Example: Remove all terms from your custom taxonomy
+	// $terms = get_terms(array('taxonomy' => 'collection', 'hide_empty' => false));
+	// foreach($terms as $term) {
+	//     wp_delete_term($term->term_id, 'collection');
+	// }
+}
+
+function also_in_this_collection_deactivate() {
+	// Clean up on deactivation (optional)
+	flush_rewrite_rules();
 }
 
 function also_in_this_collection_maintenance() {
@@ -50,13 +68,9 @@ function also_in_this_collection_maintenance() {
         flush_rewrite_rules();
         delete_option( 'alsointhiscollection_activate' );
     }
-
-	if( get_option( 'alsointhiscollection_deactivate' ) ) {
-		define('SERIES_SLUG', 'series_slug');
-		delete_option( 'alsointhiscollection_deactivate' );
-	}
 }
 
 register_activation_hook( __FILE__, 'also_in_this_collection_activate' );
+register_deactivation_hook( __FILE__, 'also_in_this_collection_deactivate' );
 register_uninstall_hook( __FILE__, 'also_in_this_collection_uninstall' );
 add_action( 'init', 'also_in_this_collection_maintenance', 11 );
