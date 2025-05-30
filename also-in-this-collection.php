@@ -3,7 +3,7 @@
 Plugin Name: Also In This Collection
 Plugin URI: https://elica-webservices.it/
 Description: Group related posts in a collection with a custom Collection taxonomy. and a list of all posts in the collection in your content.
-Version: 1.0
+Version: 1.1
 Requires CP: 2.0
 Requires PHP: 8.0
 Tested up to: 2.4.1
