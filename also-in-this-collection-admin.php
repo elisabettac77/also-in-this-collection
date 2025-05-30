@@ -176,9 +176,17 @@ class AlsoInThisCollectionAdmin {
 
     // Delegates UI rendering to the template fragment loader.
     private static function _fieldRenderer( $type, $params ) {
-        extract( $params );
-        include "views/admin/optionsfield-{$type}.php";
-    }
+    $id = isset($params['id']) ? $params['id'] : '';
+    $name = isset($params['name']) ? $params['name'] : '';
+    $value = isset($params['value']) ? $params['value'] : '';
+    $label = isset($params['label']) ? $params['label'] : '';
+    $values = isset($params['values']) ? $params['values'] : [];
+    $labels = isset($params['labels']) ? $params['labels'] : [];
+    $checked = isset($params['checked']) ? $params['checked'] : [];
+    $selected = isset($params['selected']) ? $params['selected'] : [];
+    
+    include "views/admin/optionsfield-{$type}.php";
+}
 }
 
 // Register admin functionality.
