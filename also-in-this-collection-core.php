@@ -109,7 +109,7 @@ function displayCollection($args = []) {
         return;
     }
 
-    // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- This query is acceptable for our use case
+    // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- Controlled collection query
     $query = [
         'tax_query' => [
             [
