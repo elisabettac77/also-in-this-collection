@@ -30,7 +30,7 @@ else {
 }
 
 function also_in_this_collection_requirements_notice() {
-	printf( '<div class="error"><p>%s</p></div>', __( 'Also In This Collection requires PHP 8.0 or later to run. Please update your server.', 'also-in-this-collection' ) );
+	echo '<div class="error"><p>' . esc_html__( 'Also In This Collection requires PHP 8.0 or later to run. Please update your server.', 'also-in-this-collection' ) . '</p></div>';
 }
 
 function also_in_this_collection_meets_requirements() {
