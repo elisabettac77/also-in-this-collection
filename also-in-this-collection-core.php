@@ -99,10 +99,14 @@ function displayCollection($args = []) {
     $currentpostid = $post ? $post->ID : null;
 
     // Get collection term
+    $collection = null;
     if ($collectionslug) {
         $collection = get_term_by('slug', $collectionslug, COLLECTION_TAXONOMY);
-    } else {
-        $post && $postcollection = get_the_terms($post->ID, COLLECTION_TAXONOMY) && $collection = reset($postcollection);
+    } else if ($post) {
+        $postcollection = get_the_terms($post->ID, COLLECTION_TAXONOMY);
+        if ($postcollection && is_array($postcollection) && !is_wp_error($postcollection)) {
+            $collection = reset($postcollection);
+        }
     }
 
     if (!$collection) {
