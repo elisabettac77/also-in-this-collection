@@ -109,18 +109,18 @@ function displayCollection($args = []) {
         return;
     }
 
+$query = [
     // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- Controlled collection query for collection posts
-    $query = [
-        'tax_query' => [
-            [
-                'taxonomy' => COLLECTION_TAXONOMY,
-                'field' => 'id',
-                'terms' => (int) $collection->term_id
-            ]
+    'tax_query' => [
+        [
+            'taxonomy' => COLLECTION_TAXONOMY,
+            'field'    => 'id',
+            'terms'    => (int) $collection->term_id,
         ],
-        'order' => $sortorder ?: null,
-        'nopaging' => true,
-    ];
+    ],
+    'order'    => $sortorder ?: null,
+    'nopaging' => true,
+];
     
 // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_get_posts -- Controlled, expected small result set
     $collectionposts = get_posts($query);
