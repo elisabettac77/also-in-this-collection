@@ -109,7 +109,7 @@ function displayCollection($args = []) {
         return;
     }
 
-    // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- Controlled collection query
+    // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- Controlled collection query for collection posts
     $query = [
         'tax_query' => [
             [
@@ -121,7 +121,8 @@ function displayCollection($args = []) {
         'order' => $sortorder ?: null,
         'nopaging' => true,
     ];
-
+    
+// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_get_posts -- Controlled, expected small result set
     $collectionposts = get_posts($query);
     $postsincollection = count($collectionposts);
 
